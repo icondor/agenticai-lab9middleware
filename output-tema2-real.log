@@ -1,0 +1,35 @@
+# output-tema2-real.log (REAL=1) — Tema 2 Lab 9, generat de src/middlew/tema2-anonimizare.ts la 2026-10-15T12:52:58.398Z
+
+══ VERIFICAREA 1 + 2 — cautaClient, apoi trimiteEmailConfirmare cu id-ul opac ══
+
+[human] gaseste-l pe ionel.popescu si trimite-i confirmarea
+[ai] cautaClient({"idClient":"ionel.popescu"})
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] trimiteEmailConfirmare({"email":"[ID_EMAIL_1]","mesaj":"Rezervarea dumneavoastră a fost confirmată cu succes."})
+[tool] Email trimis catre [ID_EMAIL_1]: "Rezervarea dumneavoastră a fost confirmată cu succes."
+[ai] (raspuns final, fara tool calls)
+
+Harta thread t-1: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]
+emailuriTrimise (populat de tool, din afara conversatiei): [{"email":"ionel.popescu@example.com","mesaj":"Rezervarea dumneavoastră a fost confirmată cu succes."}]
+
+══ VERIFICAREA 3 — ionel.popescu de DOUA ori (plus maria.ionescu) pe acelasi thread ══
+
+[human] cauta ionel.popescu de doua ori, apoi maria.ionescu
+[ai] cautaClient({"idClient":"ionel.popescu"}), cautaClient({"idClient":"ionel.popescu"}), cautaClient({"idClient":"maria.ionescu"})
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[tool] Client Maria Ionescu | email: [ID_EMAIL_2] | card: [ID_CARD_2] | oras: Iasi
+[ai] (raspuns final, fara tool calls)
+
+Harta thread t-3: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"],["[ID_EMAIL_2]","maria.ionescu@example.com"],["[ID_CARD_2]","5500 0000 0000 0004"]]
+Harta thread t-1: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]   (separata: acelasi id poate insemna altceva pe alt thread)
+
+══ VERIFICAREA 4 — alaturi de HITL, procesul «moare» inainte de aprobare ══
+
+→ INTRERUPERE: trimiteEmailConfirmare {"email":"[ID_EMAIL_1]","mesaj":"Rezervarea e confirmata."}
+Harta thread t-4 inainte de «crash»: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]
+Harta thread t-4 dupa «restart»:     []
+→ approve, reluare:
+[tool] Email trimis catre [ID_EMAIL_1]: "Rezervarea e confirmata."
+[ai] (raspuns final, fara tool calls)
+emailuriTrimise dupa reluare: [{"email":"[ID_EMAIL_1]","mesaj":"Rezervarea e confirmata."}]

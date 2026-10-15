@@ -1,0 +1,78 @@
+# output-tema2.log — Tema 2 Lab 9, generat de src/middlew/tema2-anonimizare.ts la 2026-10-15T12:53:50.910Z
+
+══ VERIFICAREA 1 + 2 — cautaClient, apoi trimiteEmailConfirmare cu id-ul opac ══
+
+[human] gaseste-l pe ionel.popescu si trimite-i confirmarea
+[ai] cautaClient({"idClient":"ionel.popescu"})
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] trimiteEmailConfirmare({"email":"[ID_EMAIL_1]","mesaj":"Rezervarea ta e confirmata."})
+[tool] Email trimis catre [ID_EMAIL_1]: "Rezervarea ta e confirmata."
+[ai] (raspuns final, fara tool calls)
+
+Harta thread t-1: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]
+emailuriTrimise (populat de tool, din afara conversatiei): [{"email":"ionel.popescu@example.com","mesaj":"Rezervarea ta e confirmata."}]
+
+══ VERIFICAREA 3 — ionel.popescu de DOUA ori (plus maria.ionescu) pe acelasi thread ══
+
+[human] cauta ionel.popescu de doua ori, apoi maria.ionescu
+[ai] cautaClient({"idClient":"ionel.popescu"})
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] cautaClient({"idClient":"ionel.popescu"})
+[tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+[ai] cautaClient({"idClient":"maria.ionescu"})
+[tool] Client Maria Ionescu | email: [ID_EMAIL_2] | card: [ID_CARD_2] | oras: Iasi
+[ai] (raspuns final, fara tool calls)
+
+Harta thread t-3: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"],["[ID_EMAIL_2]","maria.ionescu@example.com"],["[ID_CARD_2]","5500 0000 0000 0004"]]
+Harta thread t-1: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]   (separata: acelasi id poate insemna altceva pe alt thread)
+
+══ VERIFICAREA 4 — alaturi de HITL, procesul «moare» inainte de aprobare ══
+
+→ INTRERUPERE: trimiteEmailConfirmare {"email":"[ID_EMAIL_1]","mesaj":"Rezervarea ta e confirmata."}
+Harta thread t-4 inainte de «crash»: [["[ID_EMAIL_1]","ionel.popescu@example.com"],["[ID_CARD_1]","4111 1111 1111 1111"]]
+Harta thread t-4 dupa «restart»:     []
+→ approve, reluare:
+[tool] Email trimis catre [ID_EMAIL_1]: "Rezervarea ta e confirmata."
+[ai] (raspuns final, fara tool calls)
+emailuriTrimise dupa reluare: [{"email":"[ID_EMAIL_1]","mesaj":"Rezervarea ta e confirmata."}]
+
+══════════════════════════════════════════════════════════════════════
+ RASPUNSURI (extrase copiate exact din consola de mai sus)
+══════════════════════════════════════════════════════════════════════
+
+1. ToolMessage-ul lui cautaClient contine id-uri opace, nu datele reale:
+     [tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+   Pe aceeasi cale si cardul (4111 1111 1111 1111) ajunge [ID_CARD_1].
+
+2. Modelul a cerut:  trimiteEmailConfirmare({"email":"[ID_EMAIL_1]",...})
+   Tool-ul a primit EFECTIV (array-ul populat de tool, nu mesajele):
+     emailuriTrimise (populat de tool, din afara conversatiei): [{"email":"ionel.popescu@example.com","mesaj":"Rezervarea ta e confirmata."}]
+   Iar in istoric, confirmarea tool-ului e mascata la loc:
+     [tool] Email trimis catre [ID_EMAIL_1]: "Rezervarea ta e confirmata."
+
+3. ACELASI id. Ambele cautari ale lui ionel.popescu intorc:
+     [tool] Client Ionel Popescu | email: [ID_EMAIL_1] | card: [ID_CARD_1] | oras: Cluj-Napoca
+   iar maria.ionescu primeste id-uri noi: [ID_EMAIL_2] / [ID_CARD_2].
+   E corect sa fie acelasi: modelul poate recunoaste ca e aceeasi persoana, harta nu
+   creste la nesfarsit, iar un id vechi din istoric ramane valid. Garantia in cod e
+   harta inversa valoareLaId (per thread), consultata INAINTE de a aloca un id nou:
+     let id = h.valoareLaId.get(valoare);
+     if (!id) { id = `[ID_${fel}_${++h.contor[fel]}]`; ... }
+   Harta e per thread_id: pe t-1 si pe t-3 [ID_EMAIL_1] exista separat, deci un
+   id dintr-o conversatie nu se poate rezolva in alta.
+
+4. Harta traieste in memoria PROCESULUI; tool call-ul in asteptare (cu
+   "[ID_EMAIL_1]" in args) traieste in CHECKPOINTER, pe thread_id. Simulat:
+     Harta thread t-4 inainte de «crash»: [["[ID_EMAIL_1]","ionel.popescu@example.com"],...]
+     Harta thread t-4 dupa «restart»:     []
+     emailuriTrimise dupa reluare: [{"email":"[ID_EMAIL_1]","mesaj":"Rezervarea ta e confirmata."}]
+   Dupa restart, acelasi thread_id reia corect din checkpoint si omul aproba, dar
+   dezanonimizarea nu mai gaseste id-ul si il lasa cum e: tool-ul IREVERSIBIL ruleaza
+   cu "[ID_EMAIL_1]" ca adresa. Fara eroare, fara avertisment.
+   (Cu MemorySaver ar muri si checkpoint-ul, deci nu s-ar putea relua deloc; riscul real
+   apare exact cand pui un checkpointer durabil, Postgres/SQLite, cum cere productia.)
+   Remedii: harta trebuie sa traiasca acolo unde traieste checkpoint-ul si cu aceeasi
+   cheie (thread_id): in state-ul agentului (stateSchema, persistat de checkpointer)
+   sau intr-un store durabil pe thread_id, criptat, pentru ca acolo sunt PII in clar.
+   Plus o plasa de siguranta: daca dupa dezanonimizare in args mai exista un
+   [ID_...], refuzi executia tool-ului in loc sa-l rulezi.

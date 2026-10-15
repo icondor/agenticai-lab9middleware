@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  zod: 4.5.4
+
 importers:
 
   .:
@@ -33,7 +36,7 @@ importers:
         specifier: ^1.5.10
         version: 1.5.10(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(openai@7.15.0(zod@4.5.4))
       zod:
-        specifier: ^4.5.4
+        specifier: 4.5.4
         version: 4.5.4
     devDependencies:
       '@types/node':
@@ -52,7 +55,7 @@ packages:
     resolution: {integrity: sha512-ZlvmNFT/iIF6JD13rxbbMWD8nvGR0RaUp6yMQnoc+4Af0YjVVe/bIdW1XSQQsoxXAtg1NaT6Vak0LKFlJ4d37Q==}
     hasBin: true
     peerDependencies:
-      zod: ^3.25.0 || ^4.0.0
+      zod: 4.5.4
     peerDependenciesMeta:
       zod:
         optional: true
@@ -263,7 +266,7 @@ packages:
     engines: {node: '>=18'}
     peerDependencies:
       '@langchain/core': ^1.1.48
-      zod: ^3.25.32 || ^4.2.0
+      zod: 4.5.4
 
   '@langchain/ollama@1.3.0':
     resolution: {integrity: sha512-uzLkZVTXN0SI5zAoJbJzL4y/QN7gbmJ1txBgFfqJ5M0Qf+Yu2Zu8q98L3jIrfM+akWMaNmRU4R4APhcfQmeIsw==}
@@ -371,7 +374,7 @@ packages:
       '@smithy/signature-v4': '>=5.4.0 <6'
       undici: '>=5 <9'
       ws: ^8.21.0
-      zod: ^3.25 || ^4.0
+      zod: 4.5.4
     peerDependenciesMeta:
       '@aws-sdk/credential-provider-node':
         optional: true
@@ -432,20 +435,17 @@ packages:
   whatwg-fetch@3.6.20:
     resolution: {integrity: sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg==}
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
-
   zod@4.5.4:
     resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
 snapshots:
 
-  '@anthropic-ai/sdk@0.120.0(zod@3.25.76)':
+  '@anthropic-ai/sdk@0.120.0(zod@4.5.4)':
     dependencies:
       json-schema-to-ts: 3.1.1
       standardwebhooks: 1.1.1
     optionalDependencies:
-      zod: 3.25.76
+      zod: 4.5.4
 
   '@babel/runtime@7.29.7': {}
 
@@ -533,9 +533,9 @@ snapshots:
 
   '@langchain/anthropic@1.5.9(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))':
     dependencies:
-      '@anthropic-ai/sdk': 0.120.0(zod@3.25.76)
+      '@anthropic-ai/sdk': 0.120.0(zod@4.5.4)
       '@langchain/core': 1.2.9(openai@7.15.0(zod@4.5.4))
-      zod: 3.25.76
+      zod: 4.5.4
 
   '@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4))':
     dependencies:
@@ -545,7 +545,7 @@ snapshots:
       langsmith: 0.10.2(openai@7.15.0(zod@4.5.4))
       mustache: 4.2.0
       p-queue: 6.6.2
-      zod: 3.25.76
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
@@ -569,18 +569,6 @@ snapshots:
       '@types/json-schema': 7.0.15
       p-queue: 9.3.3
       p-retry: 7.1.1
-
-  '@langchain/langgraph@1.4.14(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(zod@3.25.76)':
-    dependencies:
-      '@langchain/core': 1.2.9(openai@7.15.0(zod@4.5.4))
-      '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))
-      '@langchain/langgraph-sdk': 1.10.2(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))
-      '@langchain/protocol': 0.0.19
-      '@standard-schema/spec': 1.1.0
-      zod: 3.25.76
-    transitivePeerDependencies:
-      - react
-      - react-dom
 
   '@langchain/langgraph@1.4.14(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(zod@4.5.4)':
     dependencies:
@@ -680,10 +668,10 @@ snapshots:
   langchain@1.5.10(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(openai@7.15.0(zod@4.5.4)):
     dependencies:
       '@langchain/core': 1.2.9(openai@7.15.0(zod@4.5.4))
-      '@langchain/langgraph': 1.4.14(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(zod@3.25.76)
+      '@langchain/langgraph': 1.4.14(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))(zod@4.5.4)
       '@langchain/langgraph-checkpoint': 1.1.5(@langchain/core@1.2.9(openai@7.15.0(zod@4.5.4)))
       langsmith: 0.10.2(openai@7.15.0(zod@4.5.4))
-      zod: 3.25.76
+      zod: 4.5.4
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
@@ -749,7 +737,5 @@ snapshots:
   undici-types@6.21.0: {}
 
   whatwg-fetch@3.6.20: {}
-
-  zod@3.25.76: {}
 
   zod@4.5.4: {}

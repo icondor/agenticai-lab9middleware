@@ -27,6 +27,20 @@
 //   nu o intrebare noua — deci euristica trebuie sa caute inapoi ultimul
 //   HumanMessage. Daca nu faci asta, a doua tura nimereste mereu pe ramura
 //   gresita. Este bug-ul clasic la middleware-urile de routing.
+//
+// REPARAT (tema 3)
+//   1. Ieftin/scump era legat doar de PROVIDER, deci nu puteai avea haiku pe
+//      Anthropic + gpt pe OpenAI cu modele alese de tine, nici doua modele pe
+//      acelasi provider. Acum fiecare nivel e «provider:model» din env:
+//        LLM_IEFTIN=anthropic:claude-haiku-4-5
+//        LLM_SCUMP=openai:gpt-5.4
+//   2. Continut ca array de blocuri (multimodal, unii provideri) era facut
+//      JSON.stringify → text lung → mereu «COMPLEXA». Acum citim doar textul.
+//   3. «de ce» prindea si «de cele mai multe ori». Acum cere granita de cuvant.
+//   4. In demo5, auditLogger era AFARA de costGuard, deci vedea modelul
+//      initial, nu pe cel ales: costul se calcula pe modelul gresit cand
+//      providerul nu intoarce numele in response_metadata (ex: Gemini).
+//      costGuard se pune acum inaintea lui auditLogger in lista.
 
 import { createMiddleware } from "langchain";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
@@ -38,7 +52,7 @@ import { createModel, readProviderFromEnv, type LlmProvider } from "../../lib/ll
 // sau te uiti la lungimea intrebarii si la numarul de tool-uri necesare.
 // ───────────────────────────────────────────────────────────────────────────
 const CUVINTE_GRELE =
-  /compar|analiz|de ce|explica|planific|itinerar|recomand|cel mai (bun|ieftin)|avantaj|dezavantaj/i;
+  /compar|analiz|\bde ce\b|explica|planific|itinerar|recomand|cel mai (bun|ieftin)|avantaj|dezavantaj/i;
 
 /** Pragul peste care o intrebare e considerata «lunga», deci probabil complexa. */
 const PRAG_LUNGIME = 120;
@@ -54,73 +68,76 @@ export function esteSimpla(text: string): boolean {
   return true;
 }
 
-/** Scoate textul ultimului mesaj de la om din istoricul conversatiei. */
-function ultimaIntrebareUmana(mesaje: { getType(): string; content: unknown }[]): string {
+/**
+ * Scoate textul ultimului mesaj de la om. `.text` concateneaza doar blocurile
+ * de text — un JSON.stringify pe un array de blocuri ar umfla lungimea.
+ */
+export function ultimaIntrebareUmana(mesaje: { getType(): string; text: string }[]): string {
   for (let i = mesaje.length - 1; i >= 0; i--) {
-    const m = mesaje[i];
-    if (m.getType() === "human") {
-      return typeof m.content === "string" ? m.content : JSON.stringify(m.content);
-    }
+    if (mesaje[i].getType() === "human") return mesaje[i].text;
   }
   return "";
+}
+
+type Nivel = { model: BaseChatModel; eticheta: string };
+
+/**
+ * «anthropic:claude-haiku-4-5» → model. Fara «:model», ramane modelul din env
+ * al providerului (compatibil cu vechiul LLM_PROVIDER_IEFTIN).
+ */
+function nivelDinSpec(spec: string): Nivel {
+  const [provider, model] = spec.split(":", 2) as [LlmProvider, string | undefined];
+  return { model: createModel(provider, { model }), eticheta: spec };
 }
 
 /**
  * Fabrica de middleware.
  *
- * Cum alegem «ieftin» si «scump» cu abstractia din lib/llm.ts: acolo modelul e
- * legat de PROVIDER, nu de numele modelului. Deci comutam intre doi provideri:
- *   - scump  = LLM_PROVIDER        (ce ai in .env, providerul tau obisnuit)
- *   - ieftin = LLM_PROVIDER_IEFTIN (ex: 'ollama' local, sau 'gemini' cu flash)
+ * Nivelele, in ordinea prioritatii:
+ *   scump  = optiuni.modelScump  | LLM_SCUMP  | LLM_PROVIDER
+ *   ieftin = optiuni.modelIeftin | LLM_IEFTIN | LLM_PROVIDER_IEFTIN | = scump
  *
- * Daca LLM_PROVIDER_IEFTIN nu e setat, folosim acelasi provider pentru ambele.
- * Mecanismul se vede in continuare in consola, dar economia e zero — si spunem
- * asta explicit, ca sa nu para ca demo-ul face mai mult decat face.
+ * Daca ieftin nu e configurat, folosim acelasi model pentru ambele. Mecanismul
+ * se vede in continuare in consola, dar economia e zero — si spunem asta
+ * explicit, ca sa nu para ca demo-ul face mai mult decat face.
  */
 export function costGuard(
-  // Parametrii sunt optionali si servesc la TESTE: poti injecta doua modele
-  // fake si verifici ca middleware-ul alege ramura buna, fara sa platesti
-  // tokeni. Un middleware pe care nu-l poti testa e un middleware in care nu ai
-  // incredere cand te trezesti cu factura.
+  // Parametrii sunt optionali si servesc la TESTE: injectezi doua modele fake
+  // si verifici ca middleware-ul alege ramura buna, fara sa platesti tokeni.
   optiuni: { modelIeftin?: BaseChatModel; modelScump?: BaseChatModel } = {},
 ) {
   // Construim modelele O SINGURA DATA, la crearea middleware-ului.
   // Daca le-ai construi in interiorul hook-ului, ai instantia un client HTTP
   // nou la fiecare tura — risipa si, la unii provideri, rate limit.
-  const providerScump = optiuni.modelScump ? "injectat" : readProviderFromEnv();
-  const providerIeftin = optiuni.modelIeftin
-    ? "injectat"
-    : ((process.env.LLM_PROVIDER_IEFTIN ?? providerScump) as LlmProvider);
+  const scump: Nivel = optiuni.modelScump
+    ? { model: optiuni.modelScump, eticheta: "scump (injectat)" }
+    : nivelDinSpec(process.env.LLM_SCUMP ?? readProviderFromEnv());
 
-  const modelScump: BaseChatModel =
-    optiuni.modelScump ?? createModel(providerScump as LlmProvider);
-  const modelIeftin: BaseChatModel =
-    optiuni.modelIeftin ??
-    (providerIeftin === providerScump
-      ? modelScump
-      : createModel(providerIeftin as LlmProvider));
+  const specIeftin = process.env.LLM_IEFTIN ?? process.env.LLM_PROVIDER_IEFTIN;
+  const ieftin: Nivel = optiuni.modelIeftin
+    ? { model: optiuni.modelIeftin, eticheta: "ieftin (injectat)" }
+    : specIeftin
+      ? nivelDinSpec(specIeftin)
+      : scump;
 
-  const acelasiModel = modelIeftin === modelScump;
+  const acelasiModel = ieftin === scump;
 
   return createMiddleware({
     name: "CostGuard",
 
     wrapModelCall: async (request, handler) => {
-      const intrebare = ultimaIntrebareUmana(request.messages as any);
-      const simpla = esteSimpla(intrebare);
-
-      const model = simpla ? modelIeftin : modelScump;
-      const etichetaProvider = simpla ? providerIeftin : providerScump;
+      const simpla = esteSimpla(ultimaIntrebareUmana(request.messages));
+      const ales = simpla ? ieftin : scump;
 
       console.log(
-        `  [cost] intrebare ${simpla ? "SIMPLA" : "COMPLEXA"} → provider ` +
-          `${etichetaProvider}${acelasiModel ? " (identic, doar demo)" : ""}`,
+        `  [cost] intrebare ${simpla ? "SIMPLA" : "COMPLEXA"} → ${ales.eticheta}` +
+          `${acelasiModel ? " (identic, doar demo)" : ""}`,
       );
 
       // Spread peste request: pastram tot (messages, tools, systemMessage,
-      // state, runtime) si inlocuim doar modelul. Asta e patternul de baza
-      // pentru orice wrapModelCall: { ...request, ceva: altceva }.
-      return handler({ ...request, model });
+      // state, runtime) si inlocuim doar modelul. Tool-urile se leaga de
+      // modelul nou DUPA middleware, deci pot fi si provideri diferiti.
+      return handler({ ...request, model: ales.model });
     },
   });
 }

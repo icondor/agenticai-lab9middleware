@@ -9,7 +9,8 @@
 //                                        spune-mi unde sa merg"
 //
 // Ce se vede:
-//   - costGuard alege modelul in functie de intrebare
+//   - costGuard alege modelul in functie de intrebare. Doua modele reale:
+//       LLM_IEFTIN=anthropic:claude-haiku-4-5 LLM_SCUMP=openai:gpt-5.4 pnpm demo5
 //   - auditLogger masoara si tipareste factura la final
 //   - programDeLucru poate scurtcircuita totul, fara niciun apel de model
 //   - toolCallLimit ramane ca plasa de siguranta
@@ -44,12 +45,13 @@ const agent = createAgent({
     // altfel platesti pentru cele dinaintea lui.
     programDeLucru({ acum: ACUM_FIXAT }),
 
+    // Decide modelul. Pus INAINTEA lui auditLogger, ca audit-ul sa vada
+    // modelul ales si sa calculeze costul pe el, nu pe cel initial.
+    costGuard(),
+
     // Masoara tot ce e mai inauntru decat el. Daca l-ai pune ultimul, n-ar
     // mai vedea ce fac middleware-urile dinaintea lui.
     auditLogger({ verbose: true }),
-
-    // Decide modelul chiar inainte de apel.
-    costGuard(),
 
     // Plasa de siguranta, cel mai aproape de tool-uri.
     toolCallLimitMiddleware({ runLimit: 6, exitBehavior: "end" }),

@@ -1,0 +1,20 @@
+# output-tema3.log — Tema 3 Lab 9, generat de src/middlew/tema3-cost-guard.ts la 2026-10-15T12:52:32.650Z
+
+══ ROUTING PE AGENT (2 ture de model per intrebare: tool call + raspuns) ══
+
+  [cost] intrebare SIMPLA → ieftin (injectat)
+  [cost] intrebare SIMPLA → ieftin (injectat)
+  "Cat e ceasul in Tokyo?" → modele chemate: ieftin, ieftin
+  [cost] intrebare COMPLEXA → scump (injectat)
+  [cost] intrebare COMPLEXA → scump (injectat)
+  "Compara vremea din Roma si Atena si spune-mi unde sa merg" → modele chemate: scump, scump
+  [cost] intrebare SIMPLA → ieftin (injectat)
+  [cost] intrebare SIMPLA → ieftin (injectat)
+  "De cele mai multe ori plec vinerea, e deschis?" → modele chemate: ieftin, ieftin
+
+══ CONTINUT CA ARRAY DE BLOCURI (bug-ul cu JSON.stringify) ══
+
+  .text           → 98 caractere → SIMPLA
+  JSON.stringify  → 125 caractere → COMPLEXA   (codul vechi)
+
+OK — toate verificarile au trecut.

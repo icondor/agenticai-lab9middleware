@@ -13,7 +13,13 @@
     "demo3": "tsx src/middlew/demo3-prebuilt.ts",
     "demo4": "tsx src/middlew/demo4-hitl.ts",
     "demo4fix": "tsx src/middlew/demo4-hitl-fixes.ts",
-    "demo5": "tsx src/middlew/demo5-custom.ts"
+    "demo5": "tsx src/middlew/demo5-custom.ts",
+    "tema1": "tsx src/middlew/tema1-suport.ts",
+    "tema2": "tsx src/middlew/tema2-anonimizare.ts",
+    "tema3": "tsx src/middlew/tema3-cost-guard.ts",
+    "tema1:real": "REAL=1 tsx src/middlew/tema1-suport.ts",
+    "tema2:real": "REAL=1 tsx src/middlew/tema2-anonimizare.ts",
+    "tema3:real": "REAL=1 LLM_IEFTIN=${LLM_IEFTIN:-anthropic:claude-haiku-4-5} LLM_SCUMP=${LLM_SCUMP:-anthropic:claude-sonnet-4-6} tsx src/middlew/tema3-cost-guard.ts"
   },
   "dependencies": {
     "@langchain/anthropic": "^1.5.9",
