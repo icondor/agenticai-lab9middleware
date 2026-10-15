@@ -125,6 +125,8 @@ export function getReasoningCapabilities(provider: LlmProvider): string {
  */
 export interface CreateModelOptions {
   reasoning?: boolean;
+  /** Suprascrie modelul din env (ex: 'claude-haiku-4-5'). Pe Azure = deployment. */
+  model?: string;
 }
 
 /**
@@ -142,7 +144,8 @@ export function createModel(
     case "azureopenai": {
       const apiKey = process.env.AZURE_OPENAI_API_KEY;
       const instanceName = process.env.AZURE_OPENAI_API_INSTANCE_NAME;
-      const deploymentName = process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME;
+      const deploymentName =
+        options.model ?? process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME;
       const apiVersion = process.env.AZURE_OPENAI_API_VERSION;
       const basePath = process.env.AZURE_OPENAI_BASE_PATH;
 
@@ -189,7 +192,7 @@ export function createModel(
           "GOOGLE_API_KEY lipsă. Source ~/.llm_gemini sau setează în .env.local.",
         );
       }
-      const modelName = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+      const modelName = options.model ?? process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
       return new ChatGoogleGenerativeAI({
         apiKey,
         model: modelName,
@@ -212,7 +215,7 @@ export function createModel(
           "OPENAI_API_KEY lipsă. Setează-l în .env.local sau ~/.llm_openai.",
         );
       }
-      const modelName = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+      const modelName = options.model ?? process.env.OPENAI_MODEL ?? "gpt-4o-mini";
       // Reasoning summaries doar pentru modele de reasoning (gpt-5 / o-series).
       const reasoningConfig =
         reasoning && isReasoningDeployment(modelName)
@@ -238,7 +241,7 @@ export function createModel(
           "ANTHROPIC_API_KEY lipsă. Setează-l în .env.local sau ~/.llm_anthropic.",
         );
       }
-      const modelName = process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
+      const modelName = options.model ?? process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5";
       return new ChatAnthropic({
         apiKey,
         model: modelName,
@@ -262,7 +265,7 @@ export function createModel(
           "XAI_API_KEY lipsă. Setează-l în .env.local sau ~/.llm_xai.",
         );
       }
-      const modelName = process.env.XAI_MODEL ?? "grok-4.5";
+      const modelName = options.model ?? process.env.XAI_MODEL ?? "grok-4.5";
       // we use the OpenAI-compatible API, so we can use ChatOpenAI class
       return new ChatOpenAI({
         apiKey,
@@ -277,7 +280,7 @@ export function createModel(
       // Nu cere cheie API: trebuie doar `ollama serve` pornit și modelul pull-uit
       // (`ollama pull qwen3:8b`). De-aia e plasa ideală de fallback.
       // Notă: reasoning-ul nu e cablat aici (depinde de model); îl lăsăm implicit.
-      const modelName = process.env.OLLAMA_MODEL ?? "qwen3:8b";
+      const modelName = options.model ?? process.env.OLLAMA_MODEL ?? "qwen3:8b";
       return new ChatOllama({
         model: modelName,
         baseUrl: process.env.OLLAMA_BASE_URL ?? "http://localhost:11434",

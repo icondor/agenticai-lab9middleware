@@ -1,0 +1,76 @@
+# output-tema1-real.log (REAL=1) — Tema 1 Lab 9, generat de src/middlew/tema1-suport.ts la 2026-10-15T12:52:37.044Z
+
+══ VERIFICAREA 1 — piiMiddleware pe rezultatul lui cautaClientSuport ══
+
+[human] cauta clientul cl-101, vreau sa vad planul lui
+[ai] [{"type":"tool_use","id":"toolu_019hXYG2JUfHbQ4KsBmXHTFg","name":"cautaClientSuport","input":{"idClient":"cl-101"},"caller":{"type":"direct"}}]
+[tool] Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+[ai] Clientul **cl-101** (Ana Radu) este pe planul **pro**. 
+
+Are email a***@example.com și plata cu cardul terminat în 4242.
+
+══ VERIFICAREA 2 — 4 tool call-uri la rand, runLimit: 3, exitBehavior: 'end' ══
+
+[human] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand
+[ai] [{"type":"text","text":"Voi cauta clientii pe rand, cate unul."},{"type":"tool_use","id":"toolu_017sgBRZG4V8vN6SVEdibwQv","name":"cautaClientSuport","input":{"idClient":"cl-101"},"caller":{"type":"direct"}}]
+[tool] Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+[ai] [{"type":"text","text":"Gata cu cl-101. Acum il caut pe cl-102."},{"type":"tool_use","id":"toolu_01AeaevzGbhm8f9XKvH7yCck","name":"cautaClientSuport","input":{"idClient":"cl-102"},"caller":{"type":"direct"}}]
+[tool] Client: Mihai Pop | email: m***@firma.ro | plan: free | card: **** **** **** 1881
+[ai] [{"type":"text","text":"Gata cu cl-102. Acum il caut pe cl-103."},{"type":"tool_use","id":"toolu_01EqEA9q8EcFw9yRFFtgYiXz","name":"cautaClientSuport","input":{"idClient":"cl-103"},"caller":{"type":"direct"}}]
+[tool] Client: Elena Stan | email: e***@corp.io | plan: enterprise | card: **** **** **** 0005
+[ai] [{"type":"text","text":"Gata cu cl-103. Acum il caut iar pe cl-101."},{"type":"tool_use","id":"toolu_0199yHs3MhyUmihDcM6fVttD","name":"cautaClientSuport","input":{"idClient":"cl-101"},"caller":{"type":"direct"}}]
+[tool] Tool call limit exceeded. Do not make additional tool calls.
+[ai] Tool call limit reached: run limit exceeded (4/3 calls).
+
+→ invoke() s-a terminat FARA exceptie. ToolMessage-uri in istoric: 4
+
+══ VERIFICAREA 3 — runLimit vs threadLimit (raspuns) ══
+
+Niciunul nu e suficient singur. runLimit se reseteaza la fiecare invoke(), iar threadLimit
+numara per thread_id (o singura conversatie, tinuta in checkpointer): un client care deschide
+10 conversatii separate primeste 10 thread-uri noi, fiecare cu contorul de la zero.
+Cerinta e legata de CLIENT, peste thread-uri, deci cere stare persistenta per idClient
+(un contor intr-un store/DB, verificat de un middleware custom sau chiar in tool).
+runLimit-ul nostru acopera doar cerinta de cost/latenta din management (nu cauta acelasi
+client de zeci de ori intr-o rulare), nu si cerinta 'nu suna de 10 ori pentru aceeasi problema'.
+
+══ VERIFICAREA 4 — humanInTheLoopMiddleware FARA checkpointer ══
+
+→ EROARE (GraphValueError): No checkpointer set
+
+Troubleshooting URL: https://docs.langchain.com/oss/javascript/langgraph/MISSING_CHECKPOINTER/
+
+escaladariFacute dupa verificarea 4: []
+
+══ VERIFICAREA 5 — acelasi thread_id vs thread_id diferit ══
+
+
+── Rularea 1 (thread_id: "t-A") ──
+mesaje in istoric la intrerupere: 2
+→ INTRERUPERE, se cere aprobare pentru: escaladeazaTicket {"idTicket":"T-500","motiv":"client nemultumit de facturare"}
+→ approve. Mesaje in istoric dupa reluare: 4
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] [{"type":"tool_use","id":"toolu_01PFxE5uX7b158w9V5M7zjP4","name":"escaladeazaTicket","input":{"idTicket":"T-500","motiv":"client nemultumit de facturare"},"caller":{"type":"direct"}}]
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: client nemultumit de facturare
+[ai] Gata! Tichetul T-500 a fost escaladat catre echipa de suport. Un specialist uman se va ocupa de problema de facturare a clientului cl-101 imediat.
+escaladariFacute: 1 [{"idTicket":"T-500","motiv":"client nemultumit de facturare"}]
+
+── Rularea 2, ACELASI thread_id (thread_id: "t-A") ──
+mesaje in istoric la intrerupere: 6
+→ NU s-a cerut aprobare
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] [{"type":"tool_use","id":"toolu_01PFxE5uX7b158w9V5M7zjP4","name":"escaladeazaTicket","input":{"idTicket":"T-500","motiv":"client nemultumit de facturare"},"caller":{"type":"direct"}}]
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: client nemultumit de facturare
+[ai] Gata! Tichetul T-500 a fost escaladat catre echipa de suport. Un specialist uman se va ocupa de problema de facturare a clientului cl-101 imediat.
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] Tichetul T-500 a fost deja escaladat acum puțin. Vrei să verific ceva despre clientul cl-101 sau are o problemă nouă?
+
+── Rularea 3, thread_id DIFERIT (thread_id: "t-B") ──
+mesaje in istoric la intrerupere: 2
+→ INTRERUPERE, se cere aprobare pentru: escaladeazaTicket {"idTicket":"T-500","motiv":"client nemultumit de facturare"}
+→ approve. Mesaje in istoric dupa reluare: 4
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] [{"type":"tool_use","id":"toolu_01E7Gerbwtug6rZraKh584WV","name":"escaladeazaTicket","input":{"idTicket":"T-500","motiv":"client nemultumit de facturare"},"caller":{"type":"direct"}}]
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: client nemultumit de facturare
+[ai] Tichetul T-500 a fost escaladat cu succes. Un specialist din echipa noastră va contacta clientul cl-101 în curând pentru a rezolva problema de facturare.
+escaladariFacute: 2 [{"idTicket":"T-500","motiv":"client nemultumit de facturare"},{"idTicket":"T-500","motiv":"client nemultumit de facturare"}]

@@ -1,0 +1,118 @@
+# output.log — Tema 1 Lab 9, generat de src/middlew/tema1-suport.ts la 2026-10-15T12:53:50.289Z
+
+══ VERIFICAREA 1 — piiMiddleware pe rezultatul lui cautaClientSuport ══
+
+[human] cauta clientul cl-101, vreau sa vad planul lui
+[ai] cauta clientul cl-101, vreau sa vad planul lui
+[tool] Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+[ai] cauta clientul cl-101, vreau sa vad planul lui-cauta clientul cl-101, vreau sa vad planul lui-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+
+══ VERIFICAREA 2 — 4 tool call-uri la rand, runLimit: 3, exitBehavior: 'end' ══
+
+[human] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand
+[ai] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand
+[tool] Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+[ai] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+[tool] Client: Mihai Pop | email: m***@firma.ro | plan: free | card: **** **** **** 1881
+[ai] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-Client: Mihai Pop | email: m***@firma.ro | plan: free | card: **** **** **** 1881
+[tool] Client: Elena Stan | email: e***@corp.io | plan: enterprise | card: **** **** **** 0005
+[ai] cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-Client: Mihai Pop | email: m***@firma.ro | plan: free | card: **** **** **** 1881-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-cauta pe rand clientii cl-101, cl-102, cl-103 si apoi iar cl-101, cate unul pe rand-Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242-Client: Mihai Pop | email: m***@firma.ro | plan: free | card: **** **** **** 1881-Client: Elena Stan | email: e***@corp.io | plan: enterprise | card: **** **** **** 0005
+[tool] Tool call limit exceeded. Do not make additional tool calls.
+[ai] Tool call limit reached: run limit exceeded (4/3 calls).
+
+→ invoke() s-a terminat FARA exceptie. ToolMessage-uri in istoric: 4
+
+══ VERIFICAREA 3 — runLimit vs threadLimit (raspuns) ══
+
+Niciunul nu e suficient singur. runLimit se reseteaza la fiecare invoke(), iar threadLimit
+numara per thread_id (o singura conversatie, tinuta in checkpointer): un client care deschide
+10 conversatii separate primeste 10 thread-uri noi, fiecare cu contorul de la zero.
+Cerinta e legata de CLIENT, peste thread-uri, deci cere stare persistenta per idClient
+(un contor intr-un store/DB, verificat de un middleware custom sau chiar in tool).
+runLimit-ul nostru acopera doar cerinta de cost/latenta din management (nu cauta acelasi
+client de zeci de ori intr-o rulare), nu si cerinta 'nu suna de 10 ori pentru aceeasi problema'.
+
+══ VERIFICAREA 4 — humanInTheLoopMiddleware FARA checkpointer ══
+
+→ EROARE (GraphValueError): No checkpointer set
+
+Troubleshooting URL: https://docs.langchain.com/oss/javascript/langgraph/MISSING_CHECKPOINTER/
+
+escaladariFacute dupa verificarea 4: []
+
+══ VERIFICAREA 5 — acelasi thread_id vs thread_id diferit ══
+
+
+── Rularea 1 (thread_id: "t-A") ──
+mesaje in istoric la intrerupere: 2
+→ INTRERUPERE, se cere aprobare pentru: escaladeazaTicket {"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}
+→ approve. Mesaje in istoric dupa reluare: 4
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+escaladariFacute: 1 [{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}]
+
+── Rularea 2, ACELASI thread_id (thread_id: "t-A") ──
+mesaje in istoric la intrerupere: 6
+→ INTRERUPERE, se cere aprobare pentru: escaladeazaTicket {"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}
+→ approve. Mesaje in istoric dupa reluare: 8
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+escaladariFacute: 2 [{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"},{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}]
+
+── Rularea 3, thread_id DIFERIT (thread_id: "t-B") ──
+mesaje in istoric la intrerupere: 2
+→ INTRERUPERE, se cere aprobare pentru: escaladeazaTicket {"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}
+→ approve. Mesaje in istoric dupa reluare: 4
+[human] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare
+[tool] Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+[ai] escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-escaladeaza tichetul T-500, clientul cl-101 e foarte nemultumit de facturare-Tichetul T-500 a fost escaladat catre om. Motiv: clientul e nemultumit de facturare
+escaladariFacute: 3 [{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"},{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"},{"idTicket":"T-500","motiv":"clientul e nemultumit de facturare"}]
+
+══════════════════════════════════════════════════════════════════════
+ RASPUNSURI (extrase copiate exact din consola de mai sus)
+══════════════════════════════════════════════════════════════════════
+
+1. ToolMessage-ul din istoric are emailul MASCAT de piiMiddleware:
+     [tool] Client: Ana Radu | email: a***@example.com | plan: pro | card: **** **** **** 4242
+   Emailul in clar "ana.radu@example.com" nu apare nicaieri in output. Cardul nu e
+   treaba middleware-ului: tool-ul stocheaza si intoarce doar ultimele 4 cifre.
+   Merge si pe celelalte domenii: "m***@firma.ro", "e***@corp.io".
+
+2. Primele 3 apeluri se executa normal. Al 4-lea NU se executa, e inlocuit cu:
+     [tool] Tool call limit exceeded. Do not make additional tool calls.
+     [ai] Tool call limit reached: run limit exceeded (4/3 calls).
+     → invoke() s-a terminat FARA exceptie. ToolMessage-uri in istoric: 4
+   (al 4-lea ToolMessage e cel de eroare, nu rezultatul lui cl-101). Oprire eleganta
+   cu exitBehavior: "end", fara exceptie.
+
+3. Vezi sectiunea VERIFICAREA 3 de mai sus.
+
+4. Fara checkpointer, agent.invoke() arunca:
+     → EROARE (GraphValueError): No checkpointer set
+     Troubleshooting URL: https://docs.langchain.com/oss/javascript/langgraph/MISSING_CHECKPOINTER/
+   Tool-ul NU s-a executat: "escaladariFacute dupa verificarea 4: []".
+
+5. ACELASI thread_id ("t-A"), dupa ce prima escaladare a fost aprobata:
+     mesaje in istoric la intrerupere: 6      (fata de 2 la prima rulare)
+     → approve. Mesaje in istoric dupa reluare: 8
+   Conversatia continua peste istoricul vechi (primul human/ai/tool/ai sunt inca acolo).
+   thread_id DIFERIT ("t-B"):
+     mesaje in istoric la intrerupere: 2
+     → approve. Mesaje in istoric dupa reluare: 4
+   Porneste de la zero, fara istoric. In AMBELE cazuri HITL cere din nou aprobare:
+   aprobarea e per tool call, nu se "tine minte" pe thread. Tichetul T-500 a ajuns
+   escaladat de 3 ori ("escaladariFacute: 3"), deci nici HITL, nici thread-ul nu
+   previn dubla escaladare. Pentru asta ar trebui ca tool-ul sa fie idempotent (sa verifice
+   daca idTicket e deja in escaladariFacute).
+   Nota: FakeToolCallingModel da AIMessage-urilor id-ul "0", "1"... dupa tura. Pe acelasi
+   thread, id-urile refolosite suprascriau mesajele vechi (upsert dupa id), de aceea
+   rularea 2 porneste modelul fals de la tura 2 (vezi comentariul din verificare5).
